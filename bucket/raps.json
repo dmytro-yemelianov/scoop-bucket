@@ -6,7 +6,7 @@
     "architecture": {
         "64bit": {
             "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v2.0.0/raps-windows-x64.zip",
-            "hash": "..."
+            "hash": "2a35507a20e2610c0f82df37aa4a745f8bb13c74b33344484a718f2b8d760d50"
         }
     },
     "bin": "raps.exe",
