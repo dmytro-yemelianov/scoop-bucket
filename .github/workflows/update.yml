@@ -1,0 +1,89 @@
+name: Update Manifest
+
+on:
+  repository_dispatch:
+    types: [raps-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (e.g., 2.0.0)'
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          # Remove 'v' prefix if present
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🌼 Updating to RAPS v$VERSION"
+
+      - name: Download and hash
+        id: hash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          URL="https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-windows-x64.zip"
+          
+          curl -fsSL "$URL" -o raps-windows-x64.zip
+          HASH=$(sha256sum raps-windows-x64.zip | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "Windows x64 hash: $HASH"
+
+      - name: Update manifest
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          HASH="${{ steps.hash.outputs.hash }}"
+          
+          cat > bucket/raps.json << EOF
+          {
+              "version": "${VERSION}",
+              "description": "🌼 RAPS (rapeseed) — Rust Autodesk Platform Services CLI",
+              "homepage": "https://rapscli.xyz",
+              "license": "Apache-2.0",
+              "architecture": {
+                  "64bit": {
+                      "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-windows-x64.zip",
+                      "hash": "${HASH}"
+                  }
+              },
+              "bin": "raps.exe",
+              "checkver": "github",
+              "autoupdate": {
+                  "architecture": {
+                      "64bit": {
+                          "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v\$version/raps-windows-x64.zip"
+                      }
+                  }
+              }
+          }
+          EOF
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bucket/raps.json
+          git commit -m "Update to v${VERSION}"
+          git push
+
+      - name: Summary
+        run: |
+          echo "## 🌼 Scoop Manifest Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Hash:** \`${{ steps.hash.outputs.hash }}\`" >> $GITHUB_STEP_SUMMARY
+
