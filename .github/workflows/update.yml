@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -35,8 +35,8 @@ jobs:
         id: hash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          URL="https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-windows-x64.zip"
-          
+          URL="https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-cli-x86_64-pc-windows-msvc.zip"
+
           curl -fsSL "$URL" -o raps-windows-x64.zip
           HASH=$(sha256sum raps-windows-x64.zip | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
@@ -46,7 +46,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           HASH="${{ steps.hash.outputs.hash }}"
-          
+
           cat > bucket/raps.json << EOF
           {
               "version": "${VERSION}",
@@ -55,16 +55,16 @@ jobs:
               "license": "Apache-2.0",
               "architecture": {
                   "64bit": {
-                      "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-windows-x64.zip",
-                      "hash": "${HASH}"
+                      "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v${VERSION}/raps-cli-x86_64-pc-windows-msvc.zip",
+                      "hash": "${HASH}",
+                      "bin": "raps-cli.exe"
                   }
               },
-              "bin": "raps.exe",
               "checkver": "github",
               "autoupdate": {
                   "architecture": {
                       "64bit": {
-                          "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v\$version/raps-windows-x64.zip"
+                          "url": "https://github.com/dmytro-yemelianov/raps/releases/download/v\$version/raps-cli-x86_64-pc-windows-msvc.zip"
                       }
                   }
               }
@@ -86,4 +86,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Hash:** \`${{ steps.hash.outputs.hash }}\`" >> $GITHUB_STEP_SUMMARY
-
