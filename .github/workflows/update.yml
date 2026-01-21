@@ -107,16 +107,21 @@ jobs:
         run: |
           Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
           irm get.scoop.sh | iex
+          # Add scoop to PATH for subsequent steps
+          echo "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Add bucket and install raps
         shell: pwsh
         run: |
+          # Ensure scoop is in PATH
+          $env:Path = "$env:USERPROFILE\scoop\shims;$env:Path"
           scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket
           scoop install raps
 
       - name: Verify installation
         shell: pwsh
         run: |
+          $env:Path = "$env:USERPROFILE\scoop\shims;$env:Path"
           Write-Host "🧪 Testing raps --version..."
           raps --version
 
@@ -128,6 +133,7 @@ jobs:
       - name: Test upgrade path
         shell: pwsh
         run: |
+          $env:Path = "$env:USERPROFILE\scoop\shims;$env:Path"
           Write-Host "🔄 Testing scoop update..."
           scoop update raps
           raps --version
