@@ -86,3 +86,40 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Hash:** \`${{ steps.hash.outputs.hash }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # Test Scoop installation after manifest update
+  test-scoop:
+    name: Test Scoop Installation
+    needs: update
+    runs-on: windows-latest
+    steps:
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          irm get.scoop.sh | iex
+
+      - name: Add bucket and install raps
+        shell: pwsh
+        run: |
+          scoop bucket add raps https://github.com/dmytro-yemelianov/scoop-bucket
+          scoop install raps
+
+      - name: Verify installation
+        shell: pwsh
+        run: |
+          Write-Host "🧪 Testing raps --version..."
+          raps --version
+
+          Write-Host "🧪 Testing raps --help..."
+          raps --help
+
+          Write-Host "✅ Scoop installation test passed"
+
+      - name: Test upgrade path
+        shell: pwsh
+        run: |
+          Write-Host "🔄 Testing scoop update..."
+          scoop update raps
+          raps --version
+          Write-Host "✅ Upgrade test passed"
